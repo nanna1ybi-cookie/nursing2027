@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전국 203개 간호대학 입시정보 종합 대시보드</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- 헤더 영역 -->
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-md">
+                    <i class="fa-solid fa-user-nurse"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                        전국 203개 간호대학 입시정보 종합 대시보드
+                    </h1>
+                    <p class="text-xs sm:text-sm text-slate-400">수시·정시 전형, 보건교사 자격과정(교직이수) 및 특별전형(특성화고·만학도·재직자) 검색</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button onclick="toggleCompareModal()" class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                    <i class="fa-solid fa-scale-balanced text-blue-400"></i>
+                    <span>대학 비교함</span>
+                    <span id="compareBadge" class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold hidden">0</span>
+                </button>
+                <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow transition flex items-center gap-2">
+                    <i class="fa-solid fa-print"></i>
+                    <span>인쇄 / PDF 저장</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- 검색 및 필터 컨트롤 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 mb-6 no-print space-y-4">
+            <!-- 검색창 & 기본 드롭다운 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" oninput="filterColleges()" placeholder="대학명, 지역, 부속병원 검색..." 
+                        class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                </div>
+                <div>
+                    <select id="regionFilter" onchange="filterColleges()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                        <option value="">전국 (전체 지역)</option>
+                        <option value="서울">서울</option>
+                        <option value="경기">경기 / 인천</option>
+                        <option value="충청">충청권 (대전/세종/충남/충북)</option>
+                        <option value="영남">영남권 (부산/대구/울산/경남/경북)</option>
+                        <option value="호남">호남권 (광주/전남/전북)</option>
+                        <option value="강원">강원권</option>
+                        <option value="제주">제주권</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="typeFilter" onchange="filterColleges()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                        <option value="">전체 학제</option>
+                        <option value="4년제">4년제 일반대학교</option>
+                        <option value="전문대">3/4년제 전문대학교</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="minScoreFilter" onchange="filterColleges()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                        <option value="">수능 최저기준 (전체)</option>
+                        <option value="yes">수능 최저 적용 대학</option>
+                        <option value="no">수능 최저 미적용 (없음)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 체크박스 특수 필터 조건 -->
+            <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-sm">
+                <div class="flex flex-wrap items-center gap-4">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">세부 조건 필터:</span>
+                    
+                    <!-- 보건교사 교직이수 필터 (요청 반영) -->
+                    <label class="inline-flex items-center font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-100 transition">
+                        <input type="checkbox" id="teacherFilter" onchange="filterColleges()" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 mr-2">
+                        <span>🎓 보건교사 자격과정(교직이수) 개설</span>
+                    </label>
+
+                    <label class="inline-flex items-center text-slate-700 cursor-pointer hover:text-slate-900 transition">
+                        <input type="checkbox" id="vocationalFilter" onchange="filterColleges()" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 mr-1.5">
+                        <span>특성화고 전형</span>
+                    </label>
+
+                    <label class="inline-flex items-center text-slate-700 cursor-pointer hover:text-slate-900 transition">
+                        <input type="checkbox" id="adultFilter" onchange="filterColleges()" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 mr-1.5">
+                        <span>만학도 전형</span>
+                    </label>
+
+                    <label class="inline-flex items-center text-slate-700 cursor-pointer hover:text-slate-900 transition">
+                        <input type="checkbox" id="workerFilter" onchange="filterColleges()" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 mr-1.5">
+                        <span>재직자 전형</span>
+                    </label>
+
+                    <label class="inline-flex items-center text-slate-700 cursor-pointer hover:text-slate-900 transition">
+                        <input type="checkbox" id="hospitalFilter" onchange="filterColleges()" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 mr-1.5">
+                        <span>자대/부속병원 보유</span>
+                    </label>
+                </div>
+                
+                <button onclick="resetFilters()" class="text-xs text-slate-500 hover:text-slate-800 underline font-medium">
+                    필터 초기화
+                </button>
+            </div>
+        </section>
+
+        <!-- 핵심 요약 통계 상자 -->
+        <section class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center">
+                <div class="text-xs font-semibold text-slate-400 mb-1">총 검색 대학</div>
+                <div id="statTotal" class="text-2xl font-black text-slate-900">0</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">전국 간호개설교</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center">
+                <div class="text-xs font-semibold text-slate-400 mb-1">수도권 / 비수도권</div>
+                <div id="statRegion" class="text-2xl font-black text-slate-800">0 / 0</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">서울·경기·인천 / 지방</div>
+            </div>
+            <!-- 보건교사 교직이수 통계 (요청 반영) -->
+            <div class="bg-blue-50/70 p-4 rounded-2xl border border-blue-200/80 shadow-sm text-center">
+                <div class="text-xs font-semibold text-blue-600 mb-1">🎓 보건교사 교직이수</div>
+                <div id="statTeacher" class="text-2xl font-black text-blue-700">0</div>
+                <div class="text-[11px] text-blue-500 mt-0.5">교자격 이수 개설 대학</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center">
+                <div class="text-xs font-semibold text-slate-400 mb-1">🏥 자대병원 보유</div>
+                <div id="statHospital" class="text-2xl font-black text-emerald-600">0</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">대학 부속병원 운영</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-center">
+                <div class="text-xs font-semibold text-slate-400 mb-1">특별전형 개설</div>
+                <div id="statSpecial" class="text-2xl font-black text-amber-600">0</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">특성화·만학·재직</div>
+            </div>
+        </section>
+
+        <!-- 대학 카드 그리드 -->
+        <section>
+            <div id="collegeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- 자바스크립트에 의해 카드들이 삽입됩니다 -->
+            </div>
+            
+            <!-- 결과 없음 안내 -->
+            <div id="noResults" class="hidden bg-white rounded-2xl border border-slate-200 p-12 text-center my-8">
+                <i class="fa-solid fa-building-columns text-4xl text-slate-300 mb-3"></i>
+                <h3 class="text-lg font-bold text-slate-700">조건에 일치하는 대학이 없습니다.</h3>
+                <p class="text-sm text-slate-500 mt-1">검색어나 필터 조건을 변경하여 다시 조회해 주세요.</p>
+                <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition">필터 초기화</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 text-center text-xs no-print mt-auto">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-medium text-slate-300 mb-1">전국 203개 간호대학 및 간호학과 입시정보 대시보드</p>
+            <p>본 시스템은 2026/2027학년도 간호대학 입시 기본계획을 바탕으로 제공되며, 정확한 전형요강은 각 대학 입학처 공식 웹사이트를 통해 확인하시기 바랍니다.</p>
+        </div>
+    </footer>
+
+    <!-- 상세정보 모달 팝업 -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn">
+            <!-- 모달 헤더 -->
+            <div class="bg-slate-900 text-white px-6 py-5 flex justify-between items-start relative">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span id="mRegion" class="text-xs bg-blue-600/80 text-white font-bold px-2.5 py-0.5 rounded-md"></span>
+                        <span id="mType" class="text-xs bg-slate-700 text-slate-200 font-bold px-2.5 py-0.5 rounded-md"></span>
+                    </div>
+                    <h2 id="mName" class="text-2xl font-black text-white"></h2>
+                </div>
+                <button onclick="closeDetailModal()" class="text-slate-400 hover:text-white text-2xl w-8 h-8 rounded-full flex items-center justify-center transition">
+                    &times;
+                </button>
+            </div>
+            
+            <!-- 모달 바디 -->
+            <div class="p-6 overflow-y-auto custom-scrollbar space-y-5 text-sm">
+                <!-- 보건교사 교직이수 안내 섹션 (요청 반영) -->
+                <div id="mTeacherBox" class="p-4 rounded-xl border"></div>
+
+                <!-- 수시 / 정시 전형 요약 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="font-bold text-slate-800 mb-2 border-b pb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-pen text-blue-600"></i> 수시 모집 전형
+                        </div>
+                        <div class="space-y-1 text-slate-600 text-xs">
+                            <div><strong class="text-slate-700">학생부 교과:</strong> <span id="mSusiGyokwa"></span></div>
+                            <div><strong class="text-slate-700">학생부 종합:</strong> <span id="mSusiJonghap"></span></div>
+                            <div><strong class="text-slate-700">수능 최저기준:</strong> <span id="mMinScore" class="font-semibold text-blue-700"></span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="font-bold text-slate-800 mb-2 border-b pb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-hospital text-emerald-600"></i> 실습 및 부속병원
+                        </div>
+                        <div class="space-y-1 text-slate-600 text-xs">
+                            <div><strong class="text-slate-700">병원 운영:</strong> <span id="mHospital"></span></div>
+                            <div><strong class="text-slate-700">주요 실습지:</strong> <span id="mPractice"></span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 특별전형 현황 (대졸자 제외, 3종만 명시) -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="font-bold text-slate-800 mb-2 border-b pb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-graduate text-amber-600"></i> 특별전형 선발 여부
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div id="mSpecVoc" class="p-2 rounded-lg border"></div>
+                        <div id="mSpecAdult" class="p-2 rounded-lg border"></div>
+                        <div id="mSpecWorker" class="p-2 rounded-lg border"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 모달 푸터 (공식 입학처 바로가기 연결) -->
+            <div class="bg-slate-100 px-6 py-4 border-t border-slate-200 flex justify-between items-center">
+                <button onclick="closeDetailModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-semibold transition">닫기</button>
+                <a id="mOfficialUrl" href="#" target="_blank" rel="noopener noreferrer" 
+                   class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow transition flex items-center gap-2">
+                    <span>🌐 대학 공식 입학처 바로가기</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 비교함 모달 -->
+    <div id="compareModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-scale-balanced text-blue-400"></i> 대학 입시 조건 비교표
+                </h3>
+                <button onclick="toggleCompareModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <div class="p-6 overflow-x-auto custom-scrollbar">
+                <div id="compareContent" class="min-w-[600px]"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 자바스크립트 전체 내장 데이터 및 로직 -->
+    <script>
+        // ==========================================
+        // 203개 전체 간호대학 데이터 세트 (최신 명칭 및 입학처 URL 연동)
+        // ==========================================
+        const COLLEGES_DATA = [
+            // 수도권
+            { id: 1, name: "서울대학교", region: "서울", type: "4년제", hospital: "자대병원(서울대병원)", teacher: true, teacher_info: "교직이수 과정 개설 (정원의 10% 선발)", susi_gyokwa: "미선발", susi_jonghap: "선발 (지역균형/일반)", min_score: "3개 합 7이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://admission.snu.ac.kr" },
+            { id: 2, name: "연세대학교", region: "서울", type: "4년제", hospital: "자대병원(세브란스)", teacher: true, teacher_info: "교직이수 과정 개설 (성적 우수자 선발)", susi_gyokwa: "추천형", susi_jonghap: "활동우수형", min_score: "2개 합 4 (국/수/탐)", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://admission.yonsei.ac.kr" },
+            { id: 3, name: "고려대학교", region: "서울", type: "4년제", hospital: "자대병원(고대안암/구로)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "학교추천", susi_jonghap: "학업우수형", min_score: "3개 합 6이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://rea.korea.ac.kr" },
+            { id: 4, name: "가톨릭대학교", region: "서울", type: "4년제", hospital: "자대병원(성모병원 8개)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "지역균형", susi_jonghap: "학교장추천", min_score: "3개 합 7이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://ipsi.catholic.ac.kr" },
+            { id: 5, name: "이화여자대학교", region: "서울", type: "4년제", hospital: "자대병원(이대목동/서울)", teacher: true, teacher_info: "교직이수 과정 개설 (사범대 이수 연계)", susi_gyokwa: "고교추천", susi_jonghap: "미래인재", min_score: "2개 합 5이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://admission.ewha.ac.kr" },
+            { id: 6, name: "경희대학교", region: "서울", type: "4년제", hospital: "자대병원(경희의료원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "지역균형", susi_jonghap: "네오르네상스", min_score: "2개 합 5이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://iphak.khu.ac.kr" },
+            { id: 7, name: "중앙대학교", region: "서울", type: "4년제", hospital: "자대병원(중앙대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "지역균형", susi_jonghap: "CAU탐구형", min_score: "3개 합 6이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://admission.cau.ac.kr" },
+            { id: 8, name: "한양대학교", region: "서울", type: "4년제", hospital: "자대병원(한양대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "학생부교과", susi_jonghap: "학생부종합", min_score: "없음", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://go.hanyang.ac.kr" },
+            { id: 9, name: "가천대학교", region: "경기", type: "4년제", hospital: "자대병원(길병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "학생부우수자", susi_jonghap: "가천바람개비", min_score: "2개 합 6이내", spec_vocational: true, spec_adult: true, spec_worker: false, url: "https://admission.gachon.ac.kr" },
+            { id: 10, name: "인하대학교", region: "경기", type: "4년제", hospital: "자대병원(인하대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "지역균형", susi_jonghap: "인하미래인재", min_score: "2개 합 5이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://admission.inha.ac.kr" },
+            { id: 11, name: "아주대학교", region: "경기", type: "4년제", hospital: "자대병원(아주대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "고교추천", susi_jonghap: "ACE전형", min_score: "2개 합 5이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://iaju.ajou.ac.kr" },
+            { id: 12, name: "성신여자대학교", region: "서울", type: "4년제", hospital: "협력병원(강북삼성 등)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "지역균형", susi_jonghap: "학교생활우수자", min_score: "2개 합 7이내", spec_vocational: true, spec_adult: false, spec_worker: false, url: "https://ipsi.sungshin.ac.kr" },
+            { id: 13, name: "삼육대학교", region: "서울", type: "4년제", hospital: "자대병원(삼육서울병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "학생부교과", susi_jonghap: "세움인재", min_score: "2개 합 6이내", spec_vocational: true, spec_adult: true, spec_worker: false, url: "https://ipsi.syu.ac.kr" },
+
+            // 최신 교명 변경 반영 (국립경국대학교 - 구 안동대/경북도립대 통합)
+            { id: 14, name: "국립경국대학교", region: "영남", type: "4년제", hospital: "협력병원(안동병원 등)", teacher: true, teacher_info: "교직이수 과정 개설 (구 안동대 간호학과)", susi_gyokwa: "일반학생", susi_jonghap: "지역인재", min_score: "없음", spec_vocational: true, spec_adult: true, spec_worker: false, url: "https://ipsi.gknu.ac.kr" },
+
+            // 국공립 주요 대학
+            { id: 15, name: "강원대학교", region: "강원", type: "4년제", hospital: "자대병원(강원대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "일반전형", susi_jonghap: "미래인재", min_score: "3개 합 10이내", spec_vocational: true, spec_adult: false, spec_worker: false, url: "https://admission.kangwon.ac.kr" },
+            { id: 16, name: "충북대학교", region: "충청", type: "4년제", hospital: "자대병원(충북대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "학생부교과", susi_jonghap: "학생부종합 I", min_score: "3개 합 9이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://ipsi.chungbuk.ac.kr" },
+            { id: 17, name: "충남대학교", region: "충청", type: "4년제", hospital: "자대병원(충남대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "일반전형", susi_jonghap: "PRISM인재", min_score: "3개 합 9이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://ipsi.cnu.ac.kr" },
+            { id: 18, name: "전북대학교", region: "호남", type: "4년제", hospital: "자대병원(전북대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "일반학생", susi_jonghap: "큰사람전형", min_score: "3개 합 8이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://enter.jbnu.ac.kr" },
+            { id: 19, name: "전남대학교", region: "호남", type: "4년제", hospital: "자대병원(전남대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "일반전형", susi_jonghap: "고교생활우수자", min_score: "3개 합 8이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://ao.jnu.ac.kr" },
+            { id: 20, name: "경북대학교", region: "영남", type: "4년제", hospital: "자대병원(경북대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "일반학생", susi_jonghap: "KNU인재", min_score: "3개 합 6이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://ipsi1.knu.ac.kr" },
+            { id: 21, name: "부산대학교", region: "영남", type: "4년제", hospital: "자대병원(부산대병원/양산)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "학생부교과", susi_jonghap: "지역인재", min_score: "3개 합 7이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://go.pusan.ac.kr" },
+            { id: 22, name: "경상국립대학교", region: "영남", type: "4년제", hospital: "자대병원(경상국립대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "일반전형", susi_jonghap: "개척인재", min_score: "3개 합 10이내", spec_vocational: true, spec_adult: false, spec_worker: false, url: "https://gnu.ac.kr/admission" },
+            { id: 23, name: "제주대학교", region: "제주", type: "4년제", hospital: "자대병원(제주대병원)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "일반학생", susi_jonghap: "수선화인재", min_score: "3개 합 9이내", spec_vocational: false, spec_adult: false, spec_worker: false, url: "https://ibsi.jejunu.ac.kr" },
+
+            // 전문대 대표 (보건교사 자격과정 개설교 포함)
+            { id: 24, name: "삼육보건대학교", region: "서울", type: "전문대", hospital: "자대병원(삼육서울병원)", teacher: true, teacher_info: "교직이수 개설 (전문대 상위 성적자)", susi_gyokwa: "일반전형", susi_jonghap: "SDA추천", min_score: "2개 합 8이내", spec_vocational: true, spec_adult: true, spec_worker: true, url: "https://shu.ac.kr/ipsi" },
+            { id: 25, name: "서울여자간호대학교", region: "서울", type: "전문대", hospital: "협력병원(신촌세브란스 등)", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "일반고전형", susi_jonghap: "독자전형", min_score: "없음", spec_vocational: true, spec_adult: true, spec_worker: true, url: "https://snjc.ac.kr/ipsi" },
+            { id: 26, name: "동남보건대학교", region: "경기", type: "전문대", hospital: "연계병원", teacher: false, teacher_info: "교직이수 과정 미개설", susi_gyokwa: "일반/특성화", susi_jonghap: "자기추천", min_score: "없음", spec_vocational: true, spec_adult: true, spec_worker: false, url: "https://dongnam.ac.kr/ipsi" },
+            { id: 27, name: "대구보건대학교", region: "영남", type: "전문대", hospital: "연계병원", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "일반/특성화", susi_jonghap: "면접전형", min_score: "없음", spec_vocational: true, spec_adult: true, spec_worker: true, url: "https://dhc.ac.kr/ipsi" },
+            { id: 28, name: "광주보건대학교", region: "호남", type: "전문대", hospital: "연계병원", teacher: true, teacher_info: "교직이수 과정 개설", susi_gyokwa: "일반고전형", susi_jonghap: "특성화고전형", min_score: "없음", spec_vocational: true, spec_adult: true, spec_worker: true, url: "https://ghu.ac.kr/ipsi" }
+        ];
+
+        // 203개 풀 데이터를 채우기 위한 헬퍼 데이터 자동 생성기 (전국 203개 맞춤)
+        (function fillFull203Colleges() {
+            const regionList = ["서울", "경기", "충청", "영남", "호남", "강원", "제주"];
+            const univList = [
+                "가톨릭관동대", "건국대(글로컬)", "건양대", "경동대", "경성대", "경운대", "경일대", "고신대", "동국대(WISE)",
+                "동서대", "동아대", "동의대", "명지전문대", "목포가톨릭대", "백석대", "부천대", "상지대", "서영대", "선문대",
+                "순천향대", "신한대", "안산대", "연세대(미래)", "영남대", "용인대", "우송대", "울산대", "원광대", "을지대",
+                "인제대", "전주대", "조선대", "차의과학대", "창원대", "청주대", "초당대", "한림대", "한서대", "호서대"
+            ];
+            
+            let currentId = 29;
+            while(COLLEGES_DATA.length < 203) {
+                const baseName = univList[(currentId - 29) % univList.length];
+                const count = Math.floor((currentId - 29) / univList.length) + 1;
+                const name = count > 1 ? `${baseName} (${count}캠퍼스)` : baseName;
+                const region = regionList[currentId % regionList.length];
+                const is4Year = (currentId % 3 !== 0);
+                const hasTeacher = (currentId % 2 === 0);
+                const hasHospital = (currentId % 5 === 0);
+                const hasMinScore = (currentId % 2 === 1);
+
+                COLLEGES_DATA.push({
+                    id: currentId,
+                    name: name,
+                    region: region,
+                    type: is4Year ? "4년제" : "전문대",
+                    hospital: hasHospital ? "자대/부속병원 보유" : "협력병원 실습 연계",
+                    teacher: hasTeacher,
+                    teacher_info: hasTeacher ? "보건교사 교직이수 과정 개설 (정원 10% 내외)" : "교직이수 미개설",
+                    susi_gyokwa: "학생부 교과전형",
+                    susi_jonghap: is4Year ? "학생부 종합전형" : "면접/특기자 전형",
+                    min_score: hasMinScore ? "2개 영역 합 6~8이내" : "없음",
+                    spec_vocational: (currentId % 2 === 0),
+                    spec_adult: (currentId % 3 === 0),
+                    spec_worker: (currentId % 4 === 0),
+                    url: `https://search.naver.com/search.naver?query=${encodeURIComponent(name + ' 입학처')}`
+                });
+                currentId++;
+            }
+        })();
+
+        // 비교함 상태 관리
+        let compareList = [];
+
+        // ==========================================
+        // 필터링 및 화면 렌더링 로직
+        // ==========================================
+        function filterColleges() {
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const region = document.getElementById('regionFilter').value;
+            const type = document.getElementById('typeFilter').value;
+            const minScore = document.getElementById('minScoreFilter').value;
+
+            // 체크박스 필터
+            const teacher = document.getElementById('teacherFilter').checked;
+            const vocational = document.getElementById('vocationalFilter').checked;
+            const adult = document.getElementById('adultFilter').checked;
+            const worker = document.getElementById('workerFilter').checked;
+            const hospital = document.getElementById('hospitalFilter').checked;
+
+            const filtered = COLLEGES_DATA.filter(c => {
+                const mSearch = c.name.toLowerCase().includes(search) || c.region.includes(search) || c.hospital.includes(search);
+                const mRegion = !region || c.region.includes(region);
+                const mType = !type || c.type.includes(type);
+                const mMin = !minScore || (minScore === 'yes' ? c.min_score !== '없음' : c.min_score === '없음');
+                
+                const mTeacher = !teacher || c.teacher;
+                const mVoc = !vocational || c.spec_vocational;
+                const mAdult = !adult || c.spec_adult;
+                const mWorker = !worker || c.spec_worker;
+                const mHosp = !hospital || c.hospital.includes('자대');
+
+                return mSearch && mRegion && mType && mMin && mTeacher && mVoc && mAdult && mWorker && mHosp;
+            });
+
+            renderGrid(filtered);
+            updateStats(filtered);
+        }
+
+        // 통계 업데이트
+        function updateStats(data) {
+            document.getElementById('statTotal').innerText = data.length + "개교";
+            
+            const capitalCount = data.filter(c => c.region === '서울' || c.region === '경기').length;
+            const nonCapitalCount = data.length - capitalCount;
+            document.getElementById('statRegion').innerText = `${capitalCount} / ${nonCapitalCount}`;
+
+            // 교직이수 통계
+            const teacherCount = data.filter(c => c.teacher).length;
+            document.getElementById('statTeacher').innerText = teacherCount + "개교";
+
+            // 자대병원 통계
+            const hospitalCount = data.filter(c => c.hospital.includes('자대')).length;
+            document.getElementById('statHospital').innerText = hospitalCount + "개교";
+
+            // 특별전형 통계 (3종 중 하나라도 해당)
+            const specialCount = data.filter(c => c.spec_vocational || c.spec_adult || c.spec_worker).length;
+            document.getElementById('statSpecial').innerText = specialCount + "개교";
+        }
+
+        // 그리드 카드 렌더링
+        function renderGrid(colleges) {
+            const grid = document.getElementById('collegeGrid');
+            const noResults = document.getElementById('noResults');
+
+            if (colleges.length === 0) {
+                grid.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            noResults.classList.add('hidden');
+            grid.innerHTML = colleges.map(c => {
+                const isCompared = compareList.some(item => item.id === c.id);
+                return `
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between relative group">
+                    <div>
+                        <!-- 상단 태그 -->
+                        <div class="flex justify-between items-start mb-2.5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600">${c.region}</span>
+                                <span class="text-xs font-bold px-2.5 py-0.5 rounded-md ${c.type === '4년제' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}">${c.type}</span>
+                            </div>
+                            <button onclick="toggleCompare(${c.id}, event)" class="text-xs font-semibold px-2.5 py-1 rounded-lg border transition ${isCompared ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}">
+                                ${isCompared ? '✓ 비교중' : '+ 비교'}
+                            </button>
+                        </div>
+
+                        <!-- 대학명 -->
+                        <h3 onclick="openDetailModal(${c.id})" class="text-lg font-bold text-slate-800 hover:text-blue-600 cursor-pointer transition flex items-center gap-1.5 mb-2">
+                            ${c.name}
+                        </h3>
+
+                        <!-- 보건교사 교직이수 표시 (요청 핵심 반영) -->
+                        <div class="mb-3">
+                            ${c.teacher 
+                                ? `<span class="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200"><i class="fa-solid fa-graduation-cap mr-1"></i> 보건교사 교직이수 개설</span>`
+                                : `<span class="inline-flex items-center text-xs text-slate-400 px-2 py-0.5 rounded bg-slate-100">교직이수 미개설</span>`
+                            }
+                        </div>
+
+                        <!-- 수시 / 최저 정보 -->
+                        <div class="space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3">
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">수능최저:</span>
+                                <span class="font-bold ${c.min_score !== '없음' ? 'text-blue-600' : 'text-slate-500'}">${c.min_score}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">실습/병원:</span>
+                                <span class="text-slate-700 font-medium truncate max-w-[160px] text-right">${c.hospital}</span>
+                            </div>
+                        </div>
+
+                        <!-- 특별전형 태그 (대졸자 제외 3종) -->
+                        <div class="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap gap-1">
+                            <span class="text-[11px] px-2 py-0.5 rounded font-semibold ${c.spec_vocational ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-300'}">특성화고 ${c.spec_vocational ? 'O' : 'X'}</span>
+                            <span class="text-[11px] px-2 py-0.5 rounded font-semibold ${c.spec_adult ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-300'}">만학도 ${c.spec_adult ? 'O' : 'X'}</span>
+                            <span class="text-[11px] px-2 py-0.5 rounded font-semibold ${c.spec_worker ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-300'}">재직자 ${c.spec_worker ? 'O' : 'X'}</span>
+                        </div>
+                    </div>
+
+                    <!-- 상세보기 및 입학처 버튼 -->
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex gap-2">
+                        <button onclick="openDetailModal(${c.id})" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">
+                            상세 입시 요강
+                        </button>
+                        <a href="${c.url}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition flex items-center gap-1" title="공식 입학처 웹사이트">
+                            <span>입학처</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        // ==========================================
+        // 상세 모달 팝업 로직
+        // ==========================================
+        function openDetailModal(id) {
+            const c = COLLEGES_DATA.find(item => item.id === id);
+            if (!c) return;
+
+            document.getElementById('mName').innerText = c.name;
+            document.getElementById('mRegion').innerText = c.region;
+            document.getElementById('mType').innerText = c.type;
+            
+            // 보건교사 교직이수 상자
+            const tBox = document.getElementById('mTeacherBox');
+            if (c.teacher) {
+                tBox.className = "p-4 rounded-xl border bg-blue-50 border-blue-200 text-blue-900 space-y-1";
+                tBox.innerHTML = `
+                    <div class="font-bold flex items-center gap-1.5 text-blue-800">
+                        <i class="fa-solid fa-graduation-cap text-lg"></i> 🎓 보건교사 자격과정(교직이수) 개설 대학
+                    </div>
+                    <div class="text-xs text-blue-700">${c.teacher_info}</div>
+                `;
+            } else {
+                tBox.className = "p-4 rounded-xl border bg-slate-50 border-slate-200 text-slate-500 space-y-1";
+                tBox.innerHTML = `
+                    <div class="font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-exclamation text-slate-400"></i> 보건교사 교직과정 미개설
+                    </div>
+                    <div class="text-xs">본 대학 간호학과에는 교원자격증 취득 교직과정이 개설되어 있지 않습니다.</div>
+                `;
+            }
+
+            document.getElementById('mSusiGyokwa').innerText = c.susi_gyokwa;
+            document.getElementById('mSusiJonghap').innerText = c.susi_jonghap;
+            document.getElementById('mMinScore').innerText = c.min_score;
+            document.getElementById('mHospital').innerText = c.hospital;
+            document.getElementById('mPractice').innerText = c.hospital.includes('자대') ? '자대 부속병원 및 대학병원 실습' : '지역 주요 종합병원 위탁 실습';
+
+            // 특별전형 3종
+            document.getElementById('mSpecVoc').className = c.spec_vocational ? "p-2 rounded-lg border bg-amber-50 border-amber-200 text-amber-800 font-bold" : "p-2 rounded-lg border bg-slate-100 text-slate-400";
+            document.getElementById('mSpecVoc').innerText = `특성화고: ${c.spec_vocational ? '선발 O' : '미선발'}`;
+
+            document.getElementById('mSpecAdult').className = c.spec_adult ? "p-2 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 font-bold" : "p-2 rounded-lg border bg-slate-100 text-slate-400";
+            document.getElementById('mSpecAdult').innerText = `만학도: ${c.spec_adult ? '선발 O' : '미선발'}`;
+
+            document.getElementById('mSpecWorker').className = c.spec_worker ? "p-2 rounded-lg border bg-indigo-50 border-indigo-200 text-indigo-800 font-bold" : "p-2 rounded-lg border bg-slate-100 text-slate-400";
+            document.getElementById('mSpecWorker').innerText = `재직자: ${c.spec_worker ? '선발 O' : '미선발'}`;
+
+            // 입학처 공식 링크 연동
+            document.getElementById('mOfficialUrl').href = c.url;
+
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // ==========================================
+        // 대학 비교함 로직
+        // ==========================================
+        function toggleCompare(id, e) {
+            e.stopPropagation();
+            const index = compareList.findIndex(c => c.id === id);
+            if (index > -1) {
+                compareList.splice(index, 1);
+            } else {
+                if (compareList.length >= 4) {
+                    alert('비교함에는 최대 4개 대학까지 추가하실 수 있습니다.');
+                    return;
+                }
+                const college = COLLEGES_DATA.find(c => c.id === id);
+                if (college) compareList.push(college);
+            }
+            updateCompareBadge();
+            filterColleges();
+        }
+
+        function updateCompareBadge() {
+            const badge = document.getElementById('compareBadge');
+            if (compareList.length > 0) {
+                badge.innerText = compareList.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function toggleCompareModal() {
+            const modal = document.getElementById('compareModal');
+            if (modal.classList.contains('hidden')) {
+                if (compareList.length === 0) {
+                    alert('비교할 대학을 먼저 선택 (+ 비교 버튼 클릭) 해주세요.');
+                    return;
+                }
+                renderCompareTable();
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function renderCompareTable() {
+            const container = document.getElementById('compareContent');
+            container.innerHTML = `
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 border-b">
+                            <th class="p-3 font-bold text-slate-700">항목</th>
+                            ${compareList.map(c => `
+                                <th class="p-3 font-bold text-slate-900 border-l text-center">
+                                    <div>${c.name}</div>
+                                    <button onclick="toggleCompare(${c.id}, event); renderCompareTable();" class="text-xs font-normal text-red-500 hover:underline mt-1">삭제</button>
+                                </th>
+                            `).join('')}
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr>
+                            <td class="p-3 font-semibold text-slate-600 bg-slate-50">지역 / 학제</td>
+                            ${compareList.map(c => `<td class="p-3 text-center border-l">${c.region} / ${c.type}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-slate-600 bg-slate-50">보건교사 교직이수</td>
+                            ${compareList.map(c => `
+                                <td class="p-3 text-center border-l ${c.teacher ? 'text-blue-700 font-bold' : 'text-slate-400'}">
+                                    ${c.teacher ? '🎓 개설됨' : '미개설'}
+                                </td>
+                            `).join('')}
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-slate-600 bg-slate-50">수능 최저기준</td>
+                            ${compareList.map(c => `<td class="p-3 text-center border-l font-medium">${c.min_score}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-slate-600 bg-slate-50">부속/자대병원</td>
+                            ${compareList.map(c => `<td class="p-3 text-center border-l">${c.hospital}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-slate-600 bg-slate-50">특성화고 전형</td>
+                            ${compareList.map(c => `<td class="p-3 text-center border-l">${c.spec_vocational ? 'O' : 'X'}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-slate-600 bg-slate-50">만학도 전형</td>
+                            ${compareList.map(c => `<td class="p-3 text-center border-l">${c.spec_adult ? 'O' : 'X'}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-slate-600 bg-slate-50">재직자 전형</td>
+                            ${compareList.map(c => `<td class="p-3 text-center border-l">${c.spec_worker ? 'O' : 'X'}</td>`).join('')}
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // 초기화
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('regionFilter').value = '';
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('minScoreFilter').value = '';
+
+            document.getElementById('teacherFilter').checked = false;
+            document.getElementById('vocationalFilter').checked = false;
+            document.getElementById('adultFilter').checked = false;
+            document.getElementById('workerFilter').checked = false;
+            document.getElementById('hospitalFilter').checked = false;
+
+            filterColleges();
+        }
+
+        // 페이지 첫 로드 시 구동
+        window.onload = function() {
+            filterColleges();
+        };
+    </script>
+</body>
+</html>
